@@ -271,9 +271,9 @@ const GuardianView = ({
   onStatusClick: (data: AlertData) => void;
 }) => {
   const images = [
-    { url: "https://images.unsplash.com/photo-1511895426328-dc8714191300?auto=format&fit=crop&q=80&w=800" },
+    { url: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=800" },
     { url: "https://images.unsplash.com/photo-1544027993-37dbfe43562a?auto=format&fit=crop&q=80&w=800" },
-    { url: "https://images.unsplash.com/photo-1573620959092-230f87efd939?auto=format&fit=crop&q=80&w=800" }
+    { url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=800" }
   ];
 
   return (
@@ -899,16 +899,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#e5e5e5] flex items-center justify-center p-4">
-      {/* 手机外壳 */}
-      <div className="w-full max-w-[390px] h-[844px] bg-black rounded-[50px] p-2 relative shadow-2xl flex flex-col shrink-0 ring-4 ring-black/10">
-        <div className="flex-1 bg-[#fbf9f8] rounded-[42px] overflow-hidden flex flex-col relative text-gray-800">
-          
-          {/* 刘海屏 / 动态岛 */}
-          <div className="absolute top-0 inset-x-0 h-6 flex justify-center z-50 pointer-events-none">
-            <div className="w-32 h-6 bg-black rounded-b-3xl"></div>
-          </div>
-
+    <div className="min-h-screen flex flex-col max-w-md mx-auto relative bg-[#fbf9f8] text-gray-800">
       {/* 全屏 Overlay 渲染 */}
       <AnimatePresence>
         {overlay === 'imageViewer' && selectedImage && (
@@ -926,7 +917,7 @@ export default function App() {
       </AnimatePresence>
 
       {/* 顶部标题栏 */}
-      <header className="flex justify-between items-center px-6 py-4 pt-10 sticky top-0 bg-[#fbf9f8]/80 backdrop-blur-md z-40">
+      <header className="flex justify-between items-center px-6 py-4 sticky top-0 bg-[#fbf9f8]/80 backdrop-blur-md z-40 border-b border-gray-100">
         <div className="flex items-center gap-2">
           <span className="text-2xl">🌱</span>
           <h1 className="text-xl font-bold text-[#024481]">嘉和康养</h1>
@@ -946,7 +937,7 @@ export default function App() {
       </main>
 
       {/* 底部导航栏 */}
-      <nav className="absolute bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-gray-100 pb-6 pt-3 px-4 flex justify-around items-center z-40 rounded-b-[42px]">
+      <nav className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-gray-100 pb-safe pb-8 pt-3 px-4 flex justify-around items-center z-40 max-w-md mx-auto shadow-[0_-10px_20px_-4px_rgba(42,92,154,0.08)]">
         {[
           { id: 'guardian', icon: '🛡️', label: '守护' },
           { id: 'health', icon: '📈', label: '健康' },
@@ -971,8 +962,6 @@ export default function App() {
           </button>
         ))}
       </nav>
-        </div>
-      </div>
     </div>
   );
 }
