@@ -371,9 +371,14 @@ const GuardianView = ({
     { url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=800" }
   ]);
 
+  const [localToast, setLocalToast] = useState('');
+
   const handleRefresh = async () => {
     if (isCapturing || isDeviceOffline) return;
     
+    // 立即滚动到安心卡位置
+    document.getElementById('guardian-moment-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
     setIsCapturing(true);
     setCaptureProgress(0);
     
@@ -391,13 +396,20 @@ const GuardianView = ({
       setCaptureProgress(step.p);
     }
 
-    // 抓拍成功后，模拟多加一张图片（或者替换第一张）
-    const newImg = { url: `https://images.unsplash.com/photo-${1500000000000 + Math.floor(Math.random() * 1000000)}?auto=format&fit=crop&q=80&w=800&sig=${Date.now()}` };
-    setImages(prev => [newImg, ...prev.slice(0, 2)]);
+    // 抓拍成功与失败概率 (假设20%失败率)
+    if (Math.random() > 0.2) {
+      // 抓拍成功后，模拟多加一张图片（或者替换第一张）
+      const newImg = { url: `https://images.unsplash.com/photo-${1500000000000 + Math.floor(Math.random() * 1000000)}?auto=format&fit=crop&q=80&w=800&sig=${Date.now()}` };
+      setImages(prev => [newImg, ...prev.slice(0, 2)]);
+      setCaptureStep('抓拍成功');
+    } else {
+      setCaptureStep('');
+      setLocalToast('抓拍失败，请稍后再试');
+      setTimeout(() => setLocalToast(''), 3000);
+    }
     
     setIsCapturing(false);
     setCaptureProgress(100);
-    setCaptureStep('抓拍成功');
   };
 
   return (
@@ -406,6 +418,18 @@ const GuardianView = ({
       animate={{ opacity: 1, y: 0 }}
       className="space-y-6 pb-24"
     >
+      <AnimatePresence>
+        {localToast && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20, x: "-50%" }}
+            animate={{ opacity: 1, scale: 1, y: 0, x: "-50%" }}
+            exit={{ opacity: 0, scale: 0.9, y: -20, x: "-50%" }}
+            className="fixed top-1/2 left-1/2 bg-gray-800 text-white px-6 py-3 rounded-full text-sm font-bold z-[150] shadow-xl text-nowrap"
+          >
+            {localToast}
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* 状态栏：显示系统当前健康状况 */}
       {!isAnonymous && (
         <button 
@@ -429,7 +453,7 @@ const GuardianView = ({
       )}
 
       {/* 安心时刻卡片：展示长辈实时抓拍画面 */}
-      <div className="bg-white rounded-[24px] p-6 card-shadow border border-gray-50 flex flex-col gap-4 mx-auto w-[90%] md:w-full min-h-[300px]">
+      <div id="guardian-moment-card" className="bg-white rounded-[24px] p-6 card-shadow border border-gray-50 flex flex-col gap-4 mx-auto w-[90%] md:w-full min-h-[300px]">
         <div className="flex justify-between items-center">
           <h2 className="text-xl font-bold text-gray-800">安心时刻</h2>
           <div className="flex items-center gap-3">
@@ -698,13 +722,15 @@ const GuardianView = ({
             <span className="text-3xl">📞</span>
             <span className="font-bold text-sm">呼叫小和</span>
           </button>
-          <button 
-            onClick={() => onAction('videoCall')}
-            className="bg-white text-gray-700 border border-gray-100 py-5 rounded-[20px] flex flex-col items-center gap-2 card-shadow active:scale-95 transition-all w-full"
+          <motion.button 
+            onClick={handleRefresh}
+            animate={isCapturing ? { rotate: [-5, 5, -5, 5, 0] } : {}}
+            transition={{ duration: 0.4 }}
+            className={`bg-white text-gray-700 border border-gray-100 py-5 rounded-[20px] flex flex-col items-center gap-2 card-shadow active:scale-95 transition-all w-full ${isCapturing ? 'opacity-50 pointer-events-none' : ''}`}
           >
             <span className="text-3xl">📷</span>
             <span className="font-bold text-sm">看看爸妈</span>
-          </button>
+          </motion.button>
           <button 
              onClick={() => onAction('voiceMessage')}
             className="bg-white text-gray-700 border border-gray-100 py-5 rounded-[20px] flex flex-col items-center gap-2 card-shadow active:scale-95 transition-all w-full"
@@ -3302,6 +3328,8 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<TabType>('guardian');
   const [overlay, setOverlay] = useState<OverlayType | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [globalToast, setGlobalToast] = useState('');
   
   // 恢复老人档案
   const [elderlyProfiles, setElderlyProfiles] = useState([
@@ -3383,15 +3411,29 @@ export default function App() {
 
   const [legalType, setLegalType] = useState<'terms' | 'privacy'>('terms');
 
+  const showToast = (msg: string) => {
+    setGlobalToast(msg);
+    setTimeout(() => setGlobalToast(''), 3000);
+  };
+
   // 统一处理操作导航
   const handleAction = (type: OverlayType) => {
     if (type === 'videoCall') {
       setIsConnecting(true);
       setOverlay('videoCall');
       // 模拟父母同意的过程
-      setTimeout(() => {
-        setIsConnecting(false);
+      let timeoutId = setTimeout(() => {
+        // 模拟接听或拒绝
+        if (Math.random() > 0.5) {
+          setIsConnecting(false); // 接通
+        } else {
+          setOverlay(null);
+          setIsConnecting(false);
+          showToast('妈妈暂时不方便接听');
+        }
       }, 4000);
+
+      // 如果在此之前页面已关闭，我们可以通过 useEffect 清理，但这里我们先简单处理
     } else {
       setOverlay(type);
     }
@@ -3515,6 +3557,18 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col max-w-md mx-auto relative bg-[#fbf9f8] text-gray-800">
+      <AnimatePresence>
+        {globalToast && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20, x: "-50%" }}
+            animate={{ opacity: 1, scale: 1, y: 0, x: "-50%" }}
+            exit={{ opacity: 0, scale: 0.9, y: -20, x: "-50%" }}
+            className="fixed top-12 left-1/2 bg-gray-800 text-white px-6 py-3 rounded-full text-sm font-bold z-[200] shadow-xl text-nowrap"
+          >
+            {globalToast}
+          </motion.div>
+        )}
+      </AnimatePresence>
       <AnimatePresence>
         {!isLoggedIn && (
           <LoginRegisterView 
