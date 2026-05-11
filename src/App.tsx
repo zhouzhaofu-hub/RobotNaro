@@ -3280,42 +3280,125 @@ const ProfileView = ({
 
 // --- 主组件 ---
 const NotificationsView = ({ onClose, onAlertClick }: { onClose: () => void, onAlertClick: (data: AlertData) => void }) => {
-  const notifications: AlertData[] = [
-    { time: '08:30', type: 'health', status: 'warning', message: '今早血压偏高148/86，请关注' },
-    { time: '昨天 23:15', type: 'fall', status: 'critical', message: '检测到妈妈可能跌倒' },
-    { time: '昨天 20:00', type: 'medication', status: 'warning', message: '缬沙坦胶囊 待服用' },
-  ];
+  const [activeTab, setActiveTab] = useState<'全部' | '告警' | '提示' | '信息'>('全部');
+
+  const tabs: Array<'全部' | '告警' | '提示' | '信息'> = ['全部', '告警', '提示', '信息'];
 
   return (
     <motion.div 
       initial={{ x: '100%' }}
       animate={{ x: 0 }}
       exit={{ x: '100%' }}
-      className="absolute inset-0 z-[100] bg-[#fbf9f8] flex flex-col"
+      className="absolute inset-0 z-[100] bg-white flex flex-col font-sans"
     >
-      <header className="bg-white text-gray-800 px-6 py-6 flex items-center gap-4 relative shadow-sm border-b border-gray-100">
-        <button onClick={onClose} className="text-2xl text-gray-600">⬅️</button>
-        <h2 className="text-xl font-bold flex-1">消息通知</h2>
+      <header className="bg-white flex items-center justify-between px-4 py-4 relative border-b border-gray-50 shrink-0">
+        <button onClick={onClose} className="w-10 h-10 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-500 font-bold active:scale-95 transition-transform text-lg">
+          {'<'}
+        </button>
+        <h2 className="text-xl font-bold text-center text-black">消息通知</h2>
+        <div className="flex items-center gap-3 shrink-0">
+          <button className="text-[10px] text-blue-500 font-bold whitespace-nowrap active:opacity-70">一键清除</button>
+          <button className="w-10 h-10 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-500 font-bold text-lg active:scale-95 transition-transform">
+            ⚙️
+          </button>
+        </div>
       </header>
-      <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] p-6 space-y-4">
-        {notifications.map((note, index) => (
-          <div 
-            key={index} 
-            onClick={() => onAlertClick(note)}
-            className="bg-white rounded-2xl p-4 card-shadow flex items-start gap-4 border border-gray-50 active:scale-[0.98] transition-transform"
-          >
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xl shrink-0 ${note.status === 'critical' ? 'bg-red-100' : 'bg-orange-100'}`}>
-              {note.status === 'critical' ? '🚨' : '⚠️'}
-            </div>
-            <div className="flex-1">
-              <div className="flex justify-between items-center mb-1">
-                <span className="font-bold text-gray-800">{note.type === 'health' ? '健康提醒' : note.type === 'fall' ? '跌倒警报' : '用药提醒'}</span>
-                <span className="text-xs text-gray-400">{note.time}</span>
-              </div>
-              <p className="text-sm text-gray-500">{note.message}</p>
-            </div>
+
+      <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        {/* 搜索框 */}
+        <div className="px-5 py-4">
+          <div className="bg-[#f7f7f9] flex items-center gap-2 px-4 py-3.5 rounded-2xl border border-gray-100">
+            <span className="text-lg text-gray-400">🔍</span>
+            <input 
+              type="text" 
+              placeholder="搜索通知标题或关键词..." 
+              className="bg-transparent border-none outline-none text-sm w-full placeholder:text-gray-400 font-medium" 
+            />
           </div>
-        ))}
+        </div>
+
+        {/* 分类 Tabs */}
+        <div className="flex px-5 overflow-x-auto gap-3 pb-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          {tabs.map((tab) => (
+            <button 
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`${activeTab === tab ? 'bg-[#1c1c1e] text-white' : 'bg-white border border-gray-100 text-gray-400'} px-8 py-2.5 rounded-xl text-sm font-bold shrink-0 transition-colors`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+
+        {/* 消息列表 */}
+        <div className="px-5 pb-6 space-y-4">
+          {/* Card 1: 关键预警 */}
+          {['全部', '告警'].includes(activeTab) && (
+            <div className="bg-[#fff5f6] border border-[#ffe5e9] shadow-[0_4px_20px_rgba(255,30,86,0.06)] rounded-[24px] p-5 flex flex-col gap-4">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-[#fb2c58] flex items-center justify-center shrink-0 shadow-sm shadow-red-200">
+                  <span className="text-white text-2xl font-bold">🛡️</span>
+                </div>
+                <div className="flex-1">
+                  <div className="flex justify-between items-start mb-2 mt-0.5">
+                    <h3 className="font-bold text-[#8a1a2b] text-base leading-tight pr-2">关键预警：生命体征异常</h3>
+                    <span className="bg-[#ffccd6] text-[#e6194b] text-[10px] font-bold px-2 py-1 rounded-full border border-[#ffb3c1] shrink-0">09:42</span>
+                  </div>
+                  <p className="text-sm text-[#e6194b] font-medium leading-relaxed tracking-wide">
+                    非接触式监测显示张大爷心率（48 BPM）与呼吸频率（10 次/分）显著低于正常阈值，请立即确认服务人状态。
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-3 pl-[4rem]">
+                <button 
+                  onClick={() => onAlertClick({ time: '09:42', type: 'health', status: 'critical', message: '心率与呼吸异常' })}
+                  className="flex-[1.2] bg-[#0066ff] text-white py-3 rounded-2xl text-xs font-bold active:scale-95 transition-transform"
+                >
+                  立即查看
+                </button>
+                <button className="flex-1 bg-white text-gray-600 py-3 rounded-2xl text-xs font-bold shadow-sm border border-gray-100 active:scale-95 transition-transform">呼叫 120</button>
+              </div>
+            </div>
+          )}
+
+          {/* Card 2: 提示提醒 */}
+          {['全部', '提示'].includes(activeTab) && (
+            <div className="bg-white border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] rounded-[24px] p-5 flex items-start gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-[#ff9500] flex items-center justify-center shrink-0 shadow-sm shadow-orange-200">
+                <span className="text-white text-2xl">🔔</span>
+              </div>
+              <div className="flex-1">
+                <div className="flex justify-between items-start mb-2 mt-0.5">
+                  <h3 className="font-bold text-[#1c1c1e] text-base">用药依从性日报</h3>
+                  <span className="bg-[#f0f0f5] text-gray-500 text-[10px] font-bold px-2 py-1 rounded-full shrink-0">08:05</span>
+                </div>
+                <p className="text-sm text-gray-400 font-medium leading-relaxed tracking-wide">
+                  昨日用药任务已全部完成。张大爷精神状态良好，已记录至周报中。
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Card 3: 信息提示 */}
+          {['全部', '信息'].includes(activeTab) && (
+            <div className="bg-white border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] rounded-[24px] p-5 flex items-start gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-[#2b7fff] flex items-center justify-center shrink-0 shadow-sm shadow-blue-200">
+                <div className="w-6 h-6 rounded-full border-2 border-white flex items-center justify-center">
+                  <span className="text-white text-sm font-bold font-serif leading-none">i</span>
+                </div>
+              </div>
+              <div className="flex-1">
+                <div className="flex justify-between items-start mb-2 mt-0.5">
+                  <h3 className="font-bold text-[#1c1c1e] text-base">系统软件更新成功</h3>
+                  <span className="bg-[#f0f0f5] text-[#5c5c60] text-[10px] font-bold px-2 py-1 rounded-full shrink-0">昨天 15:45</span>
+                </div>
+                <p className="text-sm text-gray-400 font-medium leading-relaxed tracking-wide">
+                  智护OS 1.0.0 稳定版已成功安装。本次更新优化了低光环境下的视觉算法，提升了跟随稳定性。
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </motion.div>
   );
