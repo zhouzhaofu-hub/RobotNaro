@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence, Reorder } from 'motion/react';
 import { AreaChart, Area, LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, ReferenceArea } from 'recharts';
 
@@ -50,9 +50,26 @@ interface AlertData {
 const ImageViewer = ({ src, onClose }: { src: string; onClose: () => void }) => {
   const [showSavedToast, setShowSavedToast] = useState(false);
 
-  const handleSave = () => {
-    setShowSavedToast(true);
-    setTimeout(() => setShowSavedToast(false), 2000);
+  const handleSave = async () => {
+    try {
+      const response = await fetch(src);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `snapshot_${Date.now()}.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      setShowSavedToast(true);
+      setTimeout(() => setShowSavedToast(false), 2000);
+    } catch (e) {
+      console.error('Failed to download image', e);
+      setShowSavedToast(true);
+      setTimeout(() => setShowSavedToast(false), 2000);
+    }
   };
 
   return (
@@ -483,7 +500,7 @@ const GuardianView = ({
           onClick={handleRefresh}
           className="text-center text-[10px] text-gray-400 font-bold pb-2 uppercase tracking-widest active:scale-95 transition-transform"
         >
-          {isCapturing ? '正在尝试建立物理连接...' : '下拉或点击以上图标 立即抓拍一张 ↓'}
+          {isCapturing ? '正在尝试建立物理连接...' : '下拉 立即抓拍一张'}
         </button>
       </div>
 
@@ -927,7 +944,7 @@ const HealthView = ({ onCalendarClick, isAnonymous }: { onCalendarClick: () => v
                   return (
                     <div className="bg-white/90 backdrop-blur-md p-3 rounded-xl shadow-xl border border-gray-50 flex flex-col gap-1">
                       <p className="text-[10px] font-bold text-gray-400 border-b border-gray-50 pb-1 mb-1">{data.name}</p>
-                      {payload.map((p: any) => (
+                      {payload.filter((p: any) => p.name && !p.name.endsWith('_link')).map((p: any) => (
                         <div key={p.name} className="flex items-center justify-between gap-4">
                           <span className="text-[10px] font-medium text-gray-500">{p.name}:</span>
                           <span className="text-xs font-black text-[#024481]">{p.value}</span>
@@ -943,14 +960,16 @@ const HealthView = ({ onCalendarClick, isAnonymous }: { onCalendarClick: () => v
               <>
                 <ReferenceArea y1={60} y2={89} fill="#84d8a4" fillOpacity={0.1} strokeOpacity={0} {...({} as any)} />
                 <ReferenceArea y1={90} y2={139} fill="#024481" fillOpacity={0.05} strokeOpacity={0} {...({} as any)} />
+                <Area type="monotone" dataKey="sys" name="收缩压_link" stroke="#024481" strokeWidth={2} strokeDasharray="5 5" fillOpacity={0} connectNulls={true} activeDot={false} />
                 <Area type="monotone" dataKey="sys" name="收缩压" stroke="#024481" strokeWidth={3} fillOpacity={0.1} fill="#024481" connectNulls={false} />
-                <Area type="monotone" dataKey="dia" name="舒张压" stroke="#84d8a4" strokeWidth={2} strokeDasharray="5 5" fillOpacity={0} connectNulls={false} />
+                <Area type="monotone" dataKey="dia" name="舒张压" stroke="#84d8a4" strokeWidth={2} strokeDasharray="5 5" fillOpacity={0} connectNulls={true} />
               </>
             ) : (
               <>
                 {metricTab === 'bs' && <ReferenceArea y1={3.9} y2={6.1} fill="#024481" fillOpacity={0.05} strokeOpacity={0} {...({} as any)} />}
                 {metricTab === 'hr' && <ReferenceArea y1={60} y2={100} fill="#024481" fillOpacity={0.05} strokeOpacity={0} {...({} as any)} />}
                 {metricTab === 'resp' && <ReferenceArea y1={12} y2={20} fill="#024481" fillOpacity={0.05} strokeOpacity={0} {...({} as any)} />}
+                <Area type="monotone" dataKey="val" name="val_link" stroke="#024481" strokeWidth={2} strokeDasharray="5 5" fillOpacity={0} connectNulls={true} activeDot={false} />
                 <Area type="monotone" dataKey="val" name={metricTab === 'bs' ? '血糖' : metricTab === 'hr' ? '心率' : '呼吸'} stroke="#024481" strokeWidth={3} fillOpacity={0.1} fill="#024481" connectNulls={false} />
               </>
             )}
@@ -2190,19 +2209,34 @@ const ElderlyProfileEditView = ({
 }) => {
   const [formData, setFormData] = useState(data);
   const [isScanning, setIsScanning] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   // 模拟从病历拍照提取数据
   const handleScanRecord = () => {
-    setIsScanning(true);
-    setTimeout(() => {
-      setIsScanning(false);
-      // 模拟提取了一些新信息
-      setFormData({
-        ...formData,
-        medicalHistory: formData.medicalHistory + '；近期检查：心功能二级',
-        medications: formData.medications + '；维D 1片/日'
-      });
-    }, 2000);
+    cameraInputRef.current?.click();
+  };
+
+  const handleSelectAlbum = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      setIsScanning(true);
+      setTimeout(() => {
+        setIsScanning(false);
+        // 模拟提取了一些新信息
+        setFormData({
+          ...formData,
+          medicalHistory: formData.medicalHistory ? formData.medicalHistory + '；近期检查：心功能二级(AI解析)' : '近期检查：心功能二级(AI解析)',
+          medications: formData.medications ? formData.medications + '；维D 1片/日(AI解析)' : '维D 1片/日(AI解析)'
+        });
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        if (cameraInputRef.current) cameraInputRef.current.value = '';
+      }, 2000);
+    }
   };
 
   return (
@@ -2218,6 +2252,28 @@ const ElderlyProfileEditView = ({
           <h2 className="text-lg font-bold">健康档案库</h2>
         </div>
         <div className="flex gap-2">
+          <input 
+            type="file" 
+            accept="image/*" 
+            multiple 
+            ref={fileInputRef}
+            className="hidden"
+            onChange={handleFileChange}
+          />
+          <input 
+            type="file" 
+            accept="image/*" 
+            capture="environment"
+            ref={cameraInputRef}
+            className="hidden"
+            onChange={handleFileChange}
+          />
+          <button 
+            onClick={handleSelectAlbum}
+            className="bg-blue-50 text-blue-600 px-3 py-1.5 rounded-full text-xs font-bold border border-blue-100 flex items-center gap-1 active:scale-95 transition-transform"
+          >
+            🖼️ 选相册
+          </button>
           <button 
             onClick={handleScanRecord}
             className="bg-orange-50 text-orange-600 px-3 py-1.5 rounded-full text-xs font-bold border border-orange-100 flex items-center gap-1 active:scale-95 transition-transform"
@@ -2398,6 +2454,8 @@ const ElderlyProfileEditView = ({
           </div>
         </section>
       </main>
+
+
     </motion.div>
   );
 };
@@ -2902,7 +2960,7 @@ const LoginRegisterView = ({
                 <span className="text-[10px] text-gray-400 font-bold italic">WeChat</span>
               </button>
               <button className="flex flex-col items-center gap-2 active:scale-90 transition-transform">
-                <div className="w-14 h-14 rounded-full bg-[#f7f7f7] flex items-center justify-center text-3xl shadow-sm">🍎</div>
+                <div className="w-14 h-14 rounded-full bg-[#f7f7f7] flex items-center justify-center text-3xl shadow-sm">📱</div>
                 <span className="text-[10px] text-gray-400 font-bold italic">Apple ID</span>
               </button>
             </div>
@@ -3243,6 +3301,7 @@ export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('guardian');
   const [overlay, setOverlay] = useState<OverlayType | null>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   
   // 恢复老人档案
   const [elderlyProfiles, setElderlyProfiles] = useState([
