@@ -2517,8 +2517,7 @@ const AddRobotView = ({
       setIsScanningSN(false);
       const mockSN = 'JH' + Math.floor(100000 + Math.random() * 900000).toString().padStart(6, '0');
       setFormData(prev => ({ ...prev, sn: mockSN }));
-      alert(`🎉 扫描成功！识别到设备序列号：${mockSN}`);
-    }, 2000);
+    }, 3000);
   };
 
   const handleConfirm = () => {
@@ -2561,7 +2560,7 @@ const AddRobotView = ({
         <h2 className="text-xl font-bold text-[#024481]">绑定新设备</h2>
       </header>
 
-      <main className="flex-1 p-6 space-y-6 overflow-y-auto">
+      <main className="flex-1 p-6 space-y-6 overflow-y-auto w-full relative">
         <div className="bg-white rounded-[32px] p-6 border border-gray-50 card-shadow space-y-5">
            <div className="flex flex-col items-center mb-4">
               <div className="w-20 h-20 bg-blue-50 rounded-[28px] flex items-center justify-center text-4xl mb-4 shadow-inner">🤖</div>
@@ -2574,7 +2573,7 @@ const AddRobotView = ({
              <div className="flex gap-2">
                <input 
                  type="text" 
-                 placeholder={isScanningSN ? "🔍 正在扫描中..." : "请输入序列号"}
+                 placeholder="请输入序列号"
                  value={formData.sn}
                  onChange={(e) => setFormData({...formData, sn: e.target.value})}
                  className="flex-1 bg-gray-50 border-none rounded-2xl p-4 text-sm font-bold focus:ring-2 focus:ring-blue-100"
@@ -2583,7 +2582,7 @@ const AddRobotView = ({
                  onClick={handleScanSN}
                  className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center text-xl active:scale-95 transition-transform"
                >
-                 {isScanningSN ? '⌛' : '📷'}
+                 📷
                </button>
              </div>
            </div>
@@ -2634,6 +2633,52 @@ const AddRobotView = ({
           确认绑定设备
         </button>
       </main>
+
+      {/* 扫码全屏界面 */}
+      <AnimatePresence>
+        {isScanningSN && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[300] bg-gray-900 flex flex-col items-center justify-center font-sans"
+          >
+            <div className="absolute top-0 w-full p-6 pt-12 flex justify-between items-center z-10 bg-gradient-to-b from-gray-900/80 to-transparent">
+              <button onClick={() => setIsScanningSN(false)} className="text-white text-xl p-2 active:opacity-50">✕</button>
+              <h2 className="text-white font-bold tracking-widest text-lg">扫一扫</h2>
+              <div className="w-10"></div>
+            </div>
+            
+            <div className="relative w-64 h-64 border border-white/20 rounded-3xl overflow-hidden mt-8 shadow-2xl">
+               {/* 扫描框四个边角 */}
+               <div className="absolute top-0 left-0 w-10 h-10 border-t-4 border-l-4 border-[#00f249] rounded-tl-3xl z-10 transition-all duration-300"></div>
+               <div className="absolute top-0 right-0 w-10 h-10 border-t-4 border-r-4 border-[#00f249] rounded-tr-3xl z-10 transition-all duration-300"></div>
+               <div className="absolute bottom-0 left-0 w-10 h-10 border-b-4 border-l-4 border-[#00f249] rounded-bl-3xl z-10 transition-all duration-300"></div>
+               <div className="absolute bottom-0 right-0 w-10 h-10 border-b-4 border-r-4 border-[#00f249] rounded-br-3xl z-10 transition-all duration-300"></div>
+
+               {/* 模拟摄像头背景 */}
+               <div className="absolute inset-0 bg-gray-800/80 flex items-center justify-center">
+                  <span className="text-7xl grayscale opacity-20 transform scale-90">QR</span>
+               </div>
+               
+               {/* 扫描线动画 */}
+               <motion.div 
+                 initial={{ top: '-10%' }}
+                 animate={{ top: '110%' }}
+                 transition={{ repeat: Infinity, duration: 2.5, ease: "linear" }}
+                 className="absolute left-0 right-0 h-[3px] bg-[#00f249] shadow-[0_0_15px_3px_rgba(0,242,73,0.5)] z-20"
+               />
+               <motion.div 
+                 initial={{ top: '-10%' }}
+                 animate={{ top: '110%' }}
+                 transition={{ repeat: Infinity, duration: 2.5, ease: "linear" }}
+                 className="absolute left-0 right-0 h-24 bg-gradient-to-b from-transparent to-[#00f249]/20 transform -translate-y-full z-10"
+               />
+            </div>
+            <p className="text-white/60 mt-10 text-sm font-bold tracking-widest text-center">将二维码/条码放入框内<br/><span className="text-xs font-normal opacity-80 mt-2 block">即可自动扫描识别并绑定</span></p>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };
@@ -2647,13 +2692,13 @@ const HealthReportView = ({ onClose, robots, setOverlay }: { onClose: () => void
     metrics: [
       { name: '平均心率', value: '72 bpm', status: '正常', icon: '💓' },
       { name: '平均血压', value: '128/82 mmHg', status: '正常', icon: '🩺' },
+      { name: '用药依从率', value: '100%', status: '极佳', icon: '💊' },
       { name: '睡眠时长', value: '7h 15m', status: '达标', icon: '🌙' },
-      { name: '运动天数', value: '5 天', status: '积极', icon: '🏃' },
     ],
     highlights: [
       '睡眠质量显著提升，深度睡眠比例增加 15%',
-      '每日坚持慢走，运动依从性达到 85%',
-      '周三监测到短时血压波动，已提示用药并恢复',
+      '用药依从性极佳，本周任务全部按时完成',
+      '周三监测到短时血压波动，已自动提示并恢复',
     ],
     suggestions: [
       '近期气温变化剧烈，注意早晚添衣防止感冒。',
@@ -2981,11 +3026,11 @@ const LoginRegisterView = ({
               <div className="flex-1 h-[1px] bg-gray-100"></div>
             </div>
             <div className="flex justify-center gap-12">
-              <button className="flex flex-col items-center gap-2 active:scale-90 transition-transform">
+              <button onClick={fillDemoAccount} className="flex flex-col items-center gap-2 active:scale-90 transition-transform">
                 <div className="w-14 h-14 rounded-full bg-[#f7f7f7] flex items-center justify-center text-3xl shadow-sm">💬</div>
                 <span className="text-[10px] text-gray-400 font-bold italic">WeChat</span>
               </button>
-              <button className="flex flex-col items-center gap-2 active:scale-90 transition-transform">
+              <button onClick={fillDemoAccount} className="flex flex-col items-center gap-2 active:scale-90 transition-transform">
                 <div className="w-14 h-14 rounded-full bg-[#f7f7f7] flex items-center justify-center text-3xl shadow-sm">📱</div>
                 <span className="text-[10px] text-gray-400 font-bold italic">Apple ID</span>
               </button>
@@ -3413,6 +3458,7 @@ export default function App() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [globalToast, setGlobalToast] = useState('');
+  const [alertData, setAlertData] = useState<AlertData | null>(null);
   
   // 恢复老人档案
   const [elderlyProfiles, setElderlyProfiles] = useState([
