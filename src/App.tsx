@@ -3163,10 +3163,7 @@ const ProfileView = ({
             <p className="text-[10px] text-gray-400 mt-1">包含紧急告警、健康异常及每日简报</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-           <span className="text-[10px] font-bold text-blue-500 bg-blue-50 px-2 py-0.5 rounded">去配置</span>
-           <span className="text-gray-300">➡️</span>
-        </div>
+        <span className="text-gray-300">❯</span>
       </div>
 
       {/* 底部辅助连接 */}
