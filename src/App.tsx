@@ -333,20 +333,22 @@ const GuardianView = ({
   onImageClick, 
   onStatusClick,
   onTabSwitch,
-  isDeviceOffline = false
+  isDeviceOffline = false,
+  isAnonymous = false
 }: { 
   onAction: (type: OverlayType) => void;
   onImageClick: (src: string) => void;
   onStatusClick: (data: AlertData) => void;
   onTabSwitch: (tab: TabType) => void;
   isDeviceOffline?: boolean;
+  isAnonymous?: boolean;
 }) => {
   const [isCapturing, setIsCapturing] = useState(false);
   const [activeCardIndex, setActiveCardIndex] = useState(0);
   const [captureProgress, setCaptureProgress] = useState(0);
   const [captureStep, setCaptureStep] = useState('');
 
-  const [images, setImages] = useState([
+  const [images, setImages] = useState(isAnonymous ? [] : [
     { url: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=800" },
     { url: "https://images.unsplash.com/photo-1544027993-37dbfe43562a?auto=format&fit=crop&q=80&w=800" },
     { url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=800" }
@@ -388,24 +390,26 @@ const GuardianView = ({
       className="space-y-6 pb-24"
     >
       {/* 状态栏：显示系统当前健康状况 */}
-      <button 
-        onClick={() => onStatusClick({
-          time: '刚刚',
-          type: '跌倒疑似告警',
-          status: 'critical',
-          message: '系统检测到长辈在卧室可能发生跌倒，请立即确认画面。'
-        })}
-        className="w-full bg-[#fef2f2] border border-[#fee2e2] px-4 py-3 rounded-full flex justify-between items-center shadow-sm active:scale-[0.98] transition-all"
-      >
-        <div className="flex items-center gap-2">
-          <span className="relative flex h-3 w-3">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-          </span>
-          <span className="text-red-600 font-bold">疑似跌倒告警</span>
-        </div>
-        <span className="text-red-400 text-sm font-bold flex items-center gap-1">点击处理 ➡️</span>
-      </button>
+      {!isAnonymous && (
+        <button 
+          onClick={() => onStatusClick({
+            time: '刚刚',
+            type: '跌倒疑似告警',
+            status: 'critical',
+            message: '系统检测到长辈在卧室可能发生跌倒，请立即确认画面。'
+          })}
+          className="w-full bg-[#fef2f2] border border-[#fee2e2] px-4 py-3 rounded-full flex justify-between items-center shadow-sm active:scale-[0.98] transition-all"
+        >
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+            </span>
+            <span className="text-red-600 font-bold">疑似跌倒告警</span>
+          </div>
+          <span className="text-red-400 text-sm font-bold flex items-center gap-1">点击处理 ➡️</span>
+        </button>
+      )}
 
       {/* 安心时刻卡片：展示长辈实时抓拍画面 */}
       <div className="bg-white rounded-[24px] p-6 card-shadow border border-gray-50 flex flex-col gap-4 mx-auto w-[90%] md:w-full min-h-[300px]">
@@ -435,6 +439,11 @@ const GuardianView = ({
           <div className="w-full aspect-[4/3] rounded-2xl bg-gray-50 border border-dashed border-gray-200 flex flex-col items-center justify-center gap-3">
             <span className="text-4xl text-gray-300">📷</span>
             <p className="text-xs text-gray-400 font-bold">设备离线或被遮挡，无法获取影像</p>
+          </div>
+        ) : isAnonymous ? (
+          <div className="w-full aspect-[4/3] rounded-2xl bg-gray-50 border border-dashed border-gray-200 flex flex-col items-center justify-center gap-3">
+            <span className="text-4xl text-gray-300">🍃</span>
+            <p className="text-xs text-gray-400 font-bold">暂无实时影像数据</p>
           </div>
         ) : isCapturing ? (
           <div className="relative w-full aspect-[4/3] rounded-2xl bg-gray-900 overflow-hidden flex flex-col items-center justify-center p-6 gap-4">
@@ -482,27 +491,39 @@ const GuardianView = ({
       <div className="space-y-4">
         <div className="flex items-center justify-between px-1">
           <h3 className="text-gray-500 font-bold text-xs tracking-widest uppercase">今日概况</h3>
-          <div className="flex gap-1.5">
-            {[0, 1, 2, 3].map(idx => (
-              <div 
-                key={idx}
-                className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${activeCardIndex === idx ? 'w-4 bg-[#024481]' : 'bg-gray-200'}`}
-              />
-            ))}
-          </div>
+          {!isAnonymous && (
+            <div className="flex gap-1.5">
+              {[0, 1, 2, 3].map(idx => (
+                <div 
+                  key={idx}
+                  className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${activeCardIndex === idx ? 'w-4 bg-[#024481]' : 'bg-gray-200'}`}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="relative overflow-hidden">
           <div 
             className="flex transition-transform duration-500 ease-out"
           >
-            {/* 卡片组：左右滑动 */}
-            <div className="flex w-full overflow-x-auto snap-x snap-mandatory [&::-webkit-scrollbar]:hidden"
-                 onScroll={(e) => {
-                   const el = e.currentTarget;
-                   const index = Math.round(el.scrollLeft / el.clientWidth);
-                   if (index !== activeCardIndex) setActiveCardIndex(index);
-                 }}>
+            {isAnonymous ? (
+              <div className="w-full px-1">
+                <div className="bg-white rounded-[32px] p-10 border border-gray-50 shadow-sm flex flex-col items-center justify-center gap-4 text-center">
+                  <div className="text-5xl">🔭</div>
+                  <div>
+                    <h4 className="font-bold text-gray-800">概况数据正在生成中</h4>
+                    <p className="text-xs text-gray-400 mt-1">系统正在全天候监测并分析关键健康趋势</p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex w-full overflow-x-auto snap-x snap-mandatory [&::-webkit-scrollbar]:hidden"
+                   onScroll={(e) => {
+                     const el = e.currentTarget;
+                     const index = Math.round(el.scrollLeft / el.clientWidth);
+                     if (index !== activeCardIndex) setActiveCardIndex(index);
+                   }}>
               
               {/* 心率呼吸卡片 */}
               <div 
@@ -644,6 +665,7 @@ const GuardianView = ({
               </div>
 
             </div>
+            )}
           </div>
         </div>
       </div>
@@ -698,7 +720,16 @@ const GuardianView = ({
 };
 
 // --- 子组件：健康详情 ---
-const HealthView = ({ onCalendarClick }: { onCalendarClick: () => void }) => {
+const HealthView = ({ onCalendarClick, isAnonymous }: { onCalendarClick: () => void; isAnonymous?: boolean }) => {
+  if (isAnonymous) {
+    return (
+      <div className="flex flex-col items-center justify-center pt-20 px-6 text-center">
+        <div className="text-6xl mb-6">📊</div>
+        <h2 className="text-xl font-black text-gray-800 mb-2">暂无健康数据</h2>
+        <p className="text-gray-500 text-sm">机器人监测后，将为您生成每日健康报表。</p>
+      </div>
+    );
+  }
   const [metricTab, setMetricTab] = useState<'bp' | 'bs' | 'hr' | 'resp'>('bp');
   const [timeRange, setTimeRange] = useState<'7' | '30'>('7');
   const [expandedMed, setExpandedMed] = useState(false);
@@ -1012,7 +1043,16 @@ const HealthView = ({ onCalendarClick }: { onCalendarClick: () => void }) => {
 };
 
 // --- 子组件：AI 陪伴 ---
-const CompanionView = ({ onAction }: { onAction: (type: OverlayType) => void }) => {
+const CompanionView = ({ onAction, isAnonymous }: { onAction: (type: OverlayType) => void; isAnonymous?: boolean }) => {
+  if (isAnonymous) {
+    return (
+      <div className="flex flex-col items-center justify-center pt-20 px-6 text-center">
+        <div className="text-6xl mb-6">💬</div>
+        <h2 className="text-xl font-black text-gray-800 mb-2">暂无聊天记录</h2>
+        <p className="text-gray-500 text-sm">快去和机器人聊聊天吧！</p>
+      </div>
+    );
+  }
   const [liked, setLiked] = useState(false);
   const [selectedEmotion, setSelectedEmotion] = useState<any>(null);
   const [selectedExercise, setSelectedExercise] = useState<any>(null);
@@ -2691,12 +2731,19 @@ const LoginRegisterView = ({
   const [loading, setLoading] = useState(false);
 
   const fillDemoAccount = () => {
+    // 设置演示账户登录信息
     setFormData({
       ...formData,
       phone: '13800138000',
       password: 'password123',
       code: '888888'
     });
+    // 演示模式：登录并设置演示机器人数据
+    onLogin();
+    onSetRobots([
+      { id: 'robot-1', nickname: '我的小和', model: 'Gen-2', status: 'online', battery: 85, network: '极佳', version: 'v2.1.0', icon: '🤖' },
+      { id: 'robot-2', nickname: '备用小和', model: 'Gen-2 Lite', status: 'offline', battery: 12, network: '断开', version: 'v2.0.8', icon: '🤖' }
+    ]);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -3296,6 +3343,7 @@ export default function App() {
 
   // 根据当前标签渲染视图
   const renderContent = () => {
+    const isEmptyAnonymous = isAnonymous && robots.length > 0;
     switch (activeTab) {
       case 'guardian': {
         const activeRobot = robots.find(r => r.id === activeRobotId);
@@ -3312,15 +3360,17 @@ export default function App() {
             }}
             onTabSwitch={(tab) => setActiveTab(tab)}
             isDeviceOffline={activeRobot?.status === 'offline'}
+            isAnonymous={isEmptyAnonymous} // 更新此调用
           />
         );
       }
       case 'health': return (
         <HealthView 
-          onCalendarClick={() => handleAction('medicationCalendar')} 
+          onCalendarClick={() => handleAction('medicationCalendar')}
+          isAnonymous={isEmptyAnonymous} // 更新此调用
         />
       );
-      case 'companion': return <CompanionView onAction={(type) => setOverlay(type)} />;
+      case 'companion': return <CompanionView onAction={(type) => setOverlay(type)} isAnonymous={isEmptyAnonymous} />; // 更新此调用
       case 'profile': return (
         <ProfileView 
           profiles={elderlyProfiles} 
@@ -3416,6 +3466,11 @@ export default function App() {
             onAnonymousLogin={() => {
               setIsLoggedIn(true);
               setIsAnonymous(true);
+              setIsUnboundMode(false);
+              setRobots([
+                { id: 'robot-1', nickname: '我的小和', model: 'Gen-2', status: 'online', battery: 85, network: '极佳', version: 'v2.1.0', icon: '🤖' },
+                { id: 'robot-2', nickname: '备用小和', model: 'Gen-2 Lite', status: 'offline', battery: 12, network: '断开', version: 'v2.0.8', icon: '🤖' }
+              ]);
             }}
             onSetUnbound={setIsUnboundMode}
             onSetRobots={setRobots}
